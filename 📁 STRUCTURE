@@ -1,0 +1,8 @@
+ryan-hydra/
+├── ryan-hydra.py      ← Main tool
+├── modules/           ← Attack modules
+├── wordlists/         ← Password lists
+├── results/           ← Saved results
+├── requirements.txt
+├── install.sh
+└── README.md
